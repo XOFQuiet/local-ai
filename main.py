@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 app = FastAPI()
 
-# Enable secure communication between your frontend webpage and backend server
+# Enable secure cross-origin requests so your local file can talk to the backend port
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -21,12 +21,12 @@ class ChatRequest(BaseModel):
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
 
-# Set up the secure sandbox folder for the AI to interact with
+# Creating a secure sandbox workspace folder on your machine
 WORKSPACE_DIR = os.path.join(os.getcwd(), "workspace_files")
 if not os.path.exists(WORKSPACE_DIR):
     os.makedirs(WORKSPACE_DIR)
 
-# Enforced system instructions to maintain both JSON structure and text spelling accuracy
+# Enforced system instructions for structural execution and exact spelling copy
 SYSTEM_PROMPT = """You are a highly precise local AI Agent workspace manager. 
 Your primary directive is to execute filesystem operations using exact JSON payloads, while ensuring all user content is copied with 100% accurate spelling, grammar, and formatting.
 
@@ -53,7 +53,7 @@ async def chat_with_ai(request: ChatRequest):
             "prompt": full_prompt,
             "stream": False,
             "options": {
-                "temperature": 0.0  # Keeps the model strictly focused on following rules
+                "temperature": 0.0  # Strips model creativity to guarantee rule following
             }
         }
         
@@ -61,13 +61,13 @@ async def chat_with_ai(request: ChatRequest):
         response.raise_for_status()
         ai_text = response.json().get("response", "").strip()
         
-        # Strip markdown syntax wraps if the AI adds them unexpectedly
+        # Clean up any potential markdown syntax block wraps code generation models might use
         if "```json" in ai_text:
             ai_text = ai_text.split("```json")[1].split("```")[0].strip()
         elif "```" in ai_text:
             ai_text = ai_text.split("```")[1].split("```")[0].strip()
 
-        # Try to execute the tool call requested by the AI
+        # Attempt to run filesystem tool executions
         try:
             tool_call = json.loads(ai_text)
             action = tool_call.get("action")
@@ -93,7 +93,7 @@ async def chat_with_ai(request: ChatRequest):
                 return {"response": f"📁 Files in workspace:\n" + "\n".join([f"- {file}" for file in files])}
                 
         except json.JSONDecodeError:
-            # Fallback to normal text if it's a standard chat message
+            # Fall back to standard conversational text if no JSON was detected
             return {"response": ai_text}
             
     except requests.exceptions.RequestException as e:
